@@ -1,5 +1,7 @@
 package com.beachape.metascraper
 
+import java.net.URL
+
 import com.beachape.metascraper.Messages.{ ScrapedData, ScrapeUrl }
 import com.beachape.metascraper.extractors.{ SchemaFactory, Schema }
 import com.ning.http.client.Response
@@ -26,16 +28,17 @@ class Scraper(httpClient: Http, urlSchemas: Seq[String])(implicit ec: ExecutionC
    * @param message ScrapeUrl message
    * @return document Future[Document]
    */
-  def fetch(message: ScrapeUrl): Future[ScrapedData] = {
+  def fetch(message: ScrapeUrl, requestHeaders: Map[String, Seq[String]] = Map.empty): Future[ScrapedData] = {
     val messageUrl = message.url
     if (!urlValidator.isValid(messageUrl))
       Future.failed(new IllegalArgumentException(s"Invalid url ${message.url}"))
     else if (messageUrl.hasImageExtension) {
       Future.successful(ScrapedData(messageUrl, messageUrl, messageUrl, messageUrl, Seq(messageUrl)))
     } else {
-      val requestHeaders = Map(
-        "User-Agent" -> Seq(message.userAgent),
-        "Accept-Language" -> Seq(message.acceptLanguageCode))
+//      val host = new URL(messageUrl).getHost
+//      val requestHeaders = Map(
+//        "User-Agent" -> Seq(message.userAgent),
+//        "Accept-Language" -> Seq(message.acceptLanguageCode))
       val request = url(messageUrl).setHeaders(requestHeaders)
       val resp = httpClient(request)
       resp map (s => extractData(s, messageUrl, message.schemaFactories, message.numberOfImages))
